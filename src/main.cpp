@@ -2913,7 +2913,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         	badVersion = true;
 
 
-        if (nBestHeight >= WSX_2_FORK && pfrom ->nVersion < PROTOCOL_VERSION_FORK)
+        if (nBestHeight + 1 >= WSX_2_FORK && pfrom ->nVersion < PROTOCOL_VERSION_FORK)
             badVersion = true;
 
         if (badVersion)
