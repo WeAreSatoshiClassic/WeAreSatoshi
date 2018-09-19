@@ -2927,15 +2927,13 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         CAddress addrFrom;
         uint64_t nNonce = 1;
         vRecv >> pfrom->nVersion >> pfrom->nServices >> nTime >> addrme;
-        
+
         bool badVersion = false;
         if (nBestHeight >= nHardfork1Block && pfrom->nVersion < 20002)
         	badVersion = true;
         if (pfrom->nVersion < MIN_PROTO_VERSION)
-        	badVersion = true;
-
-
-        if (nBestHeight >= WSX_2_FORK && pfrom ->nVersion < PROTOCOL_VERSION_FORK)
+            badVersion = true;
+        if (nBestHeight >= WSX_2_FORK && pfrom->nVersion < MIN_PROTO_VERSION_FORKV2)
             badVersion = true;
 
         if (badVersion)
