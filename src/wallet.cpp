@@ -1756,7 +1756,6 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
     if (nHeight > WSX_2_FORK)
         txNew.vout.push_back(CTxOut(nDevReward, DEV_SCRIPT));
 
-
     // Sign
     int nIn = 0;
     BOOST_FOREACH(const CWalletTx* pcoin, vwtxPrev)

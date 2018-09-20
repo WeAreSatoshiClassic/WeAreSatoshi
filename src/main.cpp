@@ -1036,7 +1036,12 @@ int64_t GetProofOfStakeRewardPercent(int nHeight)
 int64_t GetProofOfStakeReward(int nHeight, int64_t nCoinAge, int64_t nFees)
 {
     int64_t nRewardCoinYear = GetProofOfStakeRewardPercent(nHeight);
-    int64_t nSubsidy = nCoinAge * nRewardCoinYear / 365 / COIN;
+    int64_t nSubsidy;
+
+    if (nHeight >= WSX_2_FORK)
+        nSubsidy = nCoinAge * nRewardCoinYear * 33 / (365 * 33 + 8);
+    else
+        nSubsidy = nCoinAge * nRewardCoinYear / 365 / COIN;
 
     if (fDebug && GetBoolArg("-printcreation"))
         printf("GetProofOfStakeReward(): create=%s nCoinAge=%"PRId64" nRewardCoinYear=%"PRId64"\n", FormatMoney(nSubsidy).c_str(), nCoinAge, nRewardCoinYear);
@@ -1636,9 +1641,11 @@ bool CBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex, bool fJustCheck)
 
         int64_t nCalculatedStakeReward = GetProofOfStakeReward(pindex->nHeight, nCoinAge, nFees);
 
-        if(pindex->nHeight != WSX_2_FORK)
-          if (nStakeReward > nCalculatedStakeReward)
-              return DoS(100, error("ConnectBlock() : coinstake pays too much(actual=%"PRId64" vs calculated=%"PRId64")", nStakeReward, nCalculatedStakeReward));
+        // if (pindex->nHeight > WSX_2_FORK)
+        //     nCalculatedStakeReward -= nCalculatedStakeReward * WSX_DEV_PERCENT;
+
+        if (pindex->nHeight != WSX_2_FORK && nStakeReward > nCalculatedStakeReward)
+            return DoS(100, error("ConnectBlock() : coinstake pays too much(actual=%"PRId64" vs calculated=%"PRId64")", nStakeReward, nCalculatedStakeReward));
     }
 
     // ppcoin: track money supply and mint amount info
@@ -2168,35 +2175,37 @@ bool CBlock::AcceptBlock()
     CScript DEV_SCRIPT;
     DEV_SCRIPT.SetDestination(CBitcoinAddress("wZy96vYe5DrTtyUYsWR1UZpNyHcTcGF3LZ").Get());
 
-    bool found_1 = false;
-	
-    CTransaction temp = vtx[1];
-
-    if(nHeight >= WSX_2_FORK){
-	    for(const CTxOut &output: temp.vout) {
-        if(nHeight == WSX_2_FORK){
-            if (output.scriptPubKey == DEV_SCRIPT && output.nValue == (int64_t)(25000000 * 0.07 * COIN)) {
-              found_1 = true;
+    // Check premine allocation
+    if (nHeight == WSX_2_FORK) {
+        bool foundPremine = false;
+        for (const CTxOut &output:  vtx[1].vout) {
+            if (output.scriptPubKey == DEV_SCRIPT && output.nValue == 1750000 * COIN) {
+                foundPremine = true;
+                break;
             }
         }
-        if(nHeight > WSX_2_FORK){
+
+        if (!foundPremine)
+            return DoS(100, error("AcceptBlock() : missing premine script"));
+     }
+
+    // Check dev fee allocation
+    if (nHeight > WSX_2_FORK) {
+        bool foundDevFee = false;
+        for (const CTxOut &output:  vtx[1].vout) {
             if (output.scriptPubKey == DEV_SCRIPT) {
-              found_1 = true;
+                foundDevFee = true;
+                break;
             }
         }
-	    }
+
+        if (!foundDevFee)
+            return DoS(100, error("AcceptBlock() : missing dev fee nHeight=%d", nHeight));
     }
-	  else{
-		  found_1 = true;
-	  }
 
-    if(!(found_1))
-        return DoS(100, error("AcceptBlock() : missing dev fee %s", found_1));
-
-    //reject all proof of work blocks
-    if(nHeight >= WSX_2_FORK && !IsProofOfStake()){
+    // reject all proof of work blocks
+    if (nHeight >= WSX_2_FORK && !IsProofOfStake())
         return DoS(100, error("AcceptBlock() : reject proof-of-work at height %d", nHeight));
-    }
 
     // reject all proof of work blocks
     if (nHeight >= WSX_2_FORK && !IsProofOfStake())
@@ -2929,7 +2938,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         	badVersion = true;
         if (pfrom->nVersion < MIN_PROTO_VERSION)
             badVersion = true;
-      
+
         if (nBestHeight >= WSX_2_FORK && pfrom->nVersion < MIN_PROTO_VERSION_FORKV2)
             badVersion = true;
 
