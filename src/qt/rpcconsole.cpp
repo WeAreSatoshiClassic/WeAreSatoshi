@@ -46,7 +46,7 @@ signals:
     void reply(int category, const QString &command);
 };
 
-#include "rpcconsole.moc"
+#include "../build/rpcconsole.moc"
 
 void RPCExecutor::start()
 {
