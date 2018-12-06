@@ -1,8 +1,11 @@
 WeAreSatoshi
 =================================
 
-What is WeAreSatoshi?
+What is WeAreSatoshiClassic?
 ----------------
+WeAreSatoshiClassic is a burn free version of WSX coin.
+Joining our team you may ensure no coins will be removed from chain.
+This is first action against current WSX team to prevent them gaining over 51% of coins.
 
 WeAreSatoshi is an experimental new digital currency that enables instant payments to
 anyone, anywhere in the world. WeAreSatoshi uses peer-to-peer technology to operate
